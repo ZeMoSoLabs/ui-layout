@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -9,7 +8,10 @@ angular.module('ui.layout', [])
     // Gives to the children directives the access to the parent layout.
     return {
       opts: angular.extend({}, $scope.$eval($attrs.uiLayout), $scope.$eval($attrs.options)),
-      element: $element
+      element: $element,
+      triggerChangeNotification: function () {
+        $scope.$broadcast('split.resize');
+      }
     };
   }])
 
@@ -17,41 +19,43 @@ angular.module('ui.layout', [])
 
     var splitBarElem_htmlTemplate = '<div class="stretch ui-splitbar"></div>';
 
-    function convertNumericDataTypesToPencents(numberVairousTypeArray, parentSize){
+    function convertNumericDataTypesToPercents(numberVariousTypeArray, parentSize) {
       var _i, _n;
-      var _res = []; _res.length = numberVairousTypeArray.length;
+      var _res = [];
+      _res.length = numberVariousTypeArray.length;
       var _commonSizeIndex = [];
       var _remainingSpace = 100;
-      for (_i = 0, _n = numberVairousTypeArray.length; _i < _n; ++_i) {
-        var rawSize = numberVairousTypeArray[_i];
+      for (_i = 0, _n = numberVariousTypeArray.length; _i < _n; ++_i) {
+        var rawSize = numberVariousTypeArray[_i];
         var value = parseInt(rawSize, 10);
         // should only support pixels and pencent data type
         var type = rawSize.match(/\d+\s*(px|%)\s*$/i);
-        if (!isNaN(value) && type){
-          if (type.length > 1 && 'px' === type[1]){
-            value = + (value / parentSize * 100).toFixed(5);
+        if (!isNaN(value) && type) {
+          if (type.length > 1 && 'px' === type[1]) {
+            value = +(value / parentSize * 100).toFixed(5);
           }
           _res[_i] = value;
           _remainingSpace -= value;
-        } else{
+        } else {
           rawSize = 'auto';
         }
 
-        if (/^\s*auto\s*$/.test(rawSize)){
-          _commonSizeIndex.push(_i); continue;
+        if (/^\s*auto\s*$/.test(rawSize)) {
+          _commonSizeIndex.push(_i);
+          continue;
         }
       }
 
 
-      if (_commonSizeIndex.length > 0){
-        var _commonSize = _remainingSpace / _commonSizeIndex.length ;
+      if (_commonSizeIndex.length > 0) {
+        var _commonSize = _remainingSpace / _commonSizeIndex.length;
         for (_i = 0, _n = _commonSizeIndex.length; _i < _n; ++_i) {
           var cid = _commonSizeIndex[_i];
           _res[cid] = _commonSize;
         }
       }
 
-      parentSize;
+//      parentSize;
 
       return _res;
     }
@@ -86,11 +90,11 @@ angular.module('ui.layout', [])
           // - the size attr on the child element
           // - the global size on the layout option
           // - 'auto' Fair separation of the remaining space
-          opts.sizes[_i] = angular.element(_childens[_i]).attr('size') || opts.sizes[_i]  || 'auto';
+          opts.sizes[_i] = angular.element(_childens[_i]).attr('size') || opts.sizes[_i] || 'auto';
         }
 
         // get the final percent sizes
-        _sizes = convertNumericDataTypesToPencents(opts.sizes, tElement[0]['offset' + (isUsingColumnFlow ? 'Width' : 'Height')]);
+        _sizes = convertNumericDataTypesToPercents(opts.sizes, tElement[0]['offset' + (isUsingColumnFlow ? 'Width' : 'Height')]);
 
         if (_child_len > 1) {
           // Initialise the layout with equal sizes.
@@ -178,6 +182,7 @@ angular.module('ui.layout', [])
 
           // Enable a new animation frame
           animationFrameRequested = null;
+          parentLayout.triggerChangeNotification();
         }
 
         function _resize(mouseEvent) {
@@ -214,7 +219,6 @@ angular.module('ui.layout', [])
       }
     };
   });
-
 
 
 /**
